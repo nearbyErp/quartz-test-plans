@@ -52,6 +52,14 @@ title: ERP Test Plans
 | [03 Smoke Pass](03-smoke-pass.md) | **Первое действие** в каждом цикле. 30 мин. Если упало — стоп |
 | [04 Known Bugs Index](04-known-bugs-index.md) | Перед заведением нового бага — поиск дублей |
 
+## Интеграционные сценарии (cross-team)
+
+Не входят в зону одного тестировщика — связка нескольких клиентов через events и REST.
+
+| Артефакт | Что тестируется |
+|----------|-----------------|
+| [Админка ↔ KDS ↔ POS](integrations/admin-kds-pos.md) | E2E: приём заказа на POS → отображение на кухне → выдача клиенту. 15 сценариев |
+
 ## Шаблоны
 
 - [Bug Report Template](00-templates/bug-report-template.md) — формат для записи в Google Docs
