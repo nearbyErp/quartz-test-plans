@@ -2,74 +2,77 @@
 title: ERP Test Plans
 ---
 
-# Test Plans — Obsidian ERP
+# ERP Test Plans
 
-Документация ручного тестирования. Markdown с структурой, совместимой с любым TMS (Qase / TestRail / Notion / TestLink) — при выборе TMS импортируется через CSV/копирование.
+Документация ручного тестирования платформы **Obsidian ERP**.
 
-## Структура
+> Этот сайт — навигатор: куда смотреть, что делать, где искать. Сами баги — в Google Docs (трекер команды).
 
-```
-test-plans/
-├── README.md                          # этот файл
-├── 00-templates/                      # шаблоны (НЕ копировать в TMS)
-│   ├── bug-report-template.md         # для багов в Google Docs
-│   └── test-case-template.md          # для новых test cases
-├── 01-rbac-matrix.md                  # СКВОЗНАЯ матрица доступа (используется всеми)
-├── 02-form-validation-checklist.md    # УНИВЕРСАЛЬНЫЙ чек-лист (применяется к каждой форме)
-├── 03-smoke-pass.md                   # 30-мин smoke-круг перед глубоким тестированием
-├── 04-known-bugs-index.md             # все известные баги, распределённые по зонам
-└── testers/
-    ├── T1-access-structure/           # Тестер 1: Авторизация, Франшизы, ЮЛ, Роли, Сотрудники-CRUD
-    ├── T2-hr-and-catalog/             # Тестер 2: HR (смены/зарплата) + Каталог
-    └── T3-operations/                 # Тестер 3: ТТ, Склад, Заказы, Aggregator
-```
+---
 
-## Зоны ответственности
+## Кто ты?
 
-| Тестер | Зона | Известно багов |
-|--------|------|----------------|
-| T1 | Доступы и структура | ~17 |
-| T2 | HR + Каталог | ~22 |
-| T3 | Операционный поток | ~26 |
+### 🧪 Я тестировщик
 
-Полное распределение — в [04-known-bugs-index.md](04-known-bugs-index.md).
+Открой свою зону:
+
+- **[Тестер 1 (T1) — Доступы и структура](testers/T1/)**  
+  Авторизация, Франшизы, Юр.лица, Роли, Сотрудники-CRUD. Владелец RBAC-матрицы.
+- **[Тестер 2 (T2) — HR + Каталог](testers/T2/)**  
+  Расписание, Time tracking, Зарплата, Активность, и весь Каталог (товары/категории/модификаторы/прейскуранты/стоп-листы/техкарты).
+- **[Тестер 3 (T3) — Операционный поток](testers/T3/)**  
+  ТТ, Меню ТТ, Столы, Склад, Заказы, Aggregator integrations.
+
+Не знаешь свою зону — спроси тест-лида.
+
+### 🛠 Я разработчик
+
+Мне дали баг (например `BUG-013`):
+
+1. Открой [Известные баги](04-known-bugs-index.md) → найди по ID контекст, severity, тип
+2. Если баг про RBAC → [RBAC matrix](01-rbac-matrix.md) расписывает «что должно быть по спеке» в той ячейке
+3. Источник правды по бизнес-логике — [dev-документация](https://nearbyerp.github.io/quartz-site/)
+
+### 📊 Я PM / тест-лид
+
+- [Известные баги](04-known-bugs-index.md) — сводка 70 багов: разнесены по T1/T2/T3, severity, типу
+- [Smoke pass](03-smoke-pass.md) — 30-мин круг для проверки стенда перед циклом
+- [RBAC matrix](01-rbac-matrix.md) — основной regression-артефакт
+
+---
+
+## Общие артефакты (используют все)
+
+| Артефакт | Когда нужен |
+|----------|-------------|
+| [01 RBAC Matrix](01-rbac-matrix.md) | Каждый regression-цикл. Владелец — T1, используют все при проверке RBAC своих разделов |
+| [02 Form Validation Checklist](02-form-validation-checklist.md) | Применяется к **каждой форме** во всех зонах. Прогон при первом тестировании формы + после фиксов |
+| [03 Smoke Pass](03-smoke-pass.md) | **Первое действие** в каждом цикле тестирования. 30 минут. Если упало — стоп, репорт blocker |
+| [04 Known Bugs Index](04-known-bugs-index.md) | Перед заведением нового бага — поиск дублей. Также общая картина для PM |
+
+## Шаблоны
+
+- [Bug Report Template](00-templates/bug-report-template.md) — формат для записи в Google Docs
+- [Test Case Template](00-templates/test-case-template.md) — формат для новых test cases
+
+---
+
+## Где что живёт
+
+| Что | Где |
+|-----|-----|
+| Сами баги (статусы, история) | Google Docs (трекер команды) |
+| Индекс багов для поиска | Здесь, [04-known-bugs-index](04-known-bugs-index.md) |
+| Тест-кейсы по тестировщикам | Здесь, [папки тестировщиков](testers/T1/) |
+| Доки бизнеса и архитектуры ERP | https://nearbyerp.github.io/quartz-site/ |
+| Тест-стенд | https://erp-test.nirbi.ru |
 
 ## Соглашения по ID
 
 | Сущность | Формат | Пример |
 |----------|--------|--------|
 | Test case | `TC-{T#}-{AREA}-{NNN}` | `TC-T1-AUTH-001` |
-| Bug | `BUG-{NNN}` (3 цифры) | `BUG-042` |
+| Bug | `BUG-{NNN}` | `BUG-042` |
 | Test run | `RUN-{YYYY-MM-DD}-{N}` | `RUN-2026-05-04-1` |
 
-**AREA-коды:**
-- T1: `AUTH`, `FRAN`, `LE` (Legal Entities), `ROLE`, `EMP`
-- T2: `SHIFT`, `SCHED`, `TIME`, `PAYR`, `ACT` (Activity), `PROD`, `CAT` (Categories), `MOD` (Modifiers), `STOP`, `TECH` (Tech Cards), `PRICE`
-- T3: `STORE`, `TERM` (Terminals), `TABLE`, `MENU`, `WH` (Warehouse), `RECV` (Receipts), `WO` (Write-offs), `INGR`, `ORD`, `AGG`
-
-## Workflow тестировщика
-
-1. **Перед циклом:** прогнать `03-smoke-pass.md` — если упало, дальше не идти, репортить blocker
-2. **Открыть свою папку** `testers/T{N}-*/` и брать пакеты по порядку (по приоритету P0 → P1 → P2)
-3. **При каждой форме** — обязательно прогнать `02-form-validation-checklist.md`
-4. **При каждом разделе** — сверяться с `01-rbac-matrix.md` (RBAC баги = регрессия №1 по объёму)
-5. **Перед заведением бага** — поиск по `04-known-bugs-index.md` (избегать дублей)
-6. **Заводить баги** в Google Docs по шаблону `00-templates/bug-report-template.md` с присвоением `BUG-NNN`
-7. **Линковать в test case** в поле `Linked bugs: BUG-NNN`
-
-## Регрессионный пул
-
-При выпуске новой версии:
-1. **Smoke pass** (30 мин, любой тестер)
-2. **RBAC matrix** прогон (T1, ~1 час)
-3. **Полный регресс по своей зоне** каждым тестером — все P0 + P1 кейсы
-4. **P2 кейсы** только если есть время или затронутая фича
-
-Test cases помечены тегом `Regression: yes/no/conditional`. По умолчанию все functional happy-path = `yes`, edge cases = `conditional`, exploratory = `no`.
-
-## Тестовый стенд
-
-- **Хост:** `erp-test.nirbi.ru`
-- **Деплой:** ручной через SSH, без CI/CD (см. `D:\Project\ERP\content-mirror\06-DevOps\Deployment-Runbook.md`)
-- **Учётки** для всех 4 ролей: получить у тест-лида
-- **БД:** PostgreSQL, 12 БД (по сервисам). Сброс данных — через тест-лида
+Полные конвенции и AREA-коды — в [README репозитория](https://github.com/nearbyErp/quartz-test-plans/blob/main/README.md).
