@@ -92,6 +92,6 @@ test-base/
 ## Текущий статус (на 2026-05-05)
 
 - Сессий проведено: **1** ([2026-05-05-e2e](sessions/2026-05-05-e2e.md))
-- Покрытие: ~25% запланированного scope `chain-admin-pos-kds`
-- Active findings: **100** (27 Critical, 41 Major, 32 Minor)
+- Покрытие: ~50% запланированного scope `chain-admin-pos-kds` (30/60)
+- Active findings: **100** (27 Critical, 41 Major, 32 Minor) — включая 51 backlog BUG-NNN + 33 e2e F-NN
 - Что в плане далее: см. [todo.md](todo.md)
