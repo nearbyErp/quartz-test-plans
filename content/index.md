@@ -24,7 +24,7 @@ title: ERP Test Base
 ## Структура
 
 ```
-test-plans/
+test-base/
 ├── index.md                     ← ты здесь
 ├── findings.md                  все баги
 ├── todo.md                      план дальнейшего
