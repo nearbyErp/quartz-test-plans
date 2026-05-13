@@ -8,13 +8,13 @@ import * as Plugin from "./quartz/plugins"
  */
 const config: QuartzConfig = {
   configuration: {
-    pageTitle: "ERP Test Plans",
+    pageTitle: "ERP Test Base",
     pageTitleSuffix: " | Obsidian ERP Testing",
     enableSPA: true,
     enablePopovers: true,
     analytics: null,
     locale: "ru-RU",
-    baseUrl: "nearbyerp.github.io/quartz-test-plans",
+    baseUrl: "nearbyerp.github.io/quartz-test-base",
     ignorePatterns: ["private", ".obsidian", "_templates", ".claude"],
     defaultDateType: "modified",
     theme: {

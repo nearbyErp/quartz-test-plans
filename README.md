@@ -1,8 +1,8 @@
-# quartz-test-plans
+# quartz-test-base
 
 Документация ручного тестирования Obsidian ERP, опубликованная как статический сайт через [Quartz 4](https://quartz.jzhao.xyz).
 
-🌐 **Сайт:** https://nearbyerp.github.io/quartz-test-plans/
+🌐 **Сайт:** https://nearbyerp.github.io/quartz-test-base/
 
 ## Структура
 
