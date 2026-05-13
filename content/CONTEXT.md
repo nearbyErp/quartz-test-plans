@@ -53,15 +53,19 @@ ID для запросов:
 | ID | Что блокирует | Где смотреть |
 |---|---|---|
 | **F102 / F103** | UI редактирования сотрудника висит на «Сохранение...», `PATCH /api/v1/admin/employees/<id>` → 500 на любое поле (pin, roles.stores). Обход — прямой PATCH с {pin} или {roles:[{role_id,store_ids}]}. user-service Pod здоров, баг в коде свежего билда | findings F102/F103 |
-| **F78 / F100** | PayKeeper-flow заблокирован: `paykeeper/accounts/by-store` → 500 «fetch failed», `paykeeper/accounts` → 502 PAYKEEPER_ADAPTER_UNAVAILABLE. Сано отметил «Kafka не подняли». Ждём подъём Kafka | findings F78/F100 |
+
+> **Закрытые блокеры (для истории):**
+> - ~~F78 / F100 PayKeeper~~ — fixed by infra deploy между 2026-05-12 и 2026-05-13 (см. сессия 2026-05-13)
+> - ~~F91 длинное имя ТТ~~ — fixed нашим BUG-026 (`@Size(max=255)` в `Create/UpdateStoreRequest`), deployed
+> - ~~F81 mock-чаевые~~ — by-design BR 3.2 §R5 («mock-API готовы, ждём webhook от support@netmonet.co»)
 
 ## Открытые вопросы / TODO
 
-- **POS/KDS happy-path** запланирован на 2026-05-13 (план в session 2026-05-12 → этап «POS/KDS happy-path»).
+- **POS/KDS happy-path** запланирован на 2026-05-13 — НЕ выполнен (день ушёл на bug-fix marathon).
 - **RBAC** под Manager/Кассир/Franchisee — заблокирован отсутствием паролей к существующим тестовым аккаунтам. Без новых аккаунтов на проде — невозможен.
 - **Hard-delete [TEST] Капучино 0.4** (id `d1224622-a76d-4bce-bee8-64bf2cc3411e`) — застрял в soft-delete, hard-delete endpoint вернул 404.
-- **F81 (mock-чаевые)** ждёт ручного фикса разработчиком — фронт-хардкоженные данные на странице `/admin/tips`.
-- **F91 (длинное имя ТТ → 500)** — backend не валидирует длину строки.
+- **F77 — план фикса готов, не реализован** (см. handoff `archive/dev-handoffs/F77-user-service-unknown-field-500-2026-05-13.md`).
+- **5 подтверждённых багов кандидаты на фикс**: F77 (user-service unknown-field 500), F82 (negative КБЖУ принимаются), F85 (XSS-вектор в name), F92 (store email без @Email), F96 (English errors в русском UI). См. сессию 2026-05-13.
 
 ## Конвенции
 
@@ -85,6 +89,76 @@ ID для запросов:
 ---
 
 # Хронология сессий
+
+## Сессия 2026-05-13 — Bug-fix marathon (роль dev+tester унифицирована)
+
+**Тестер+разраб:** Claude (Playwright + код в repos/) + Александр на связи. **Длительность:** ~весь день.
+
+### Подготовка
+- Роль обновлена: dev+tester unified (см. memory `project_role_unified_dev_tester`)
+- Toolchain установлен: JDK 17 (был) + JDK 21 (Microsoft OpenJDK), Maven 3.9.9 (ручная распаковка в `tools/`), pnpm 11.1.1, Node 24. См. memory `reference_toolchain`.
+- novoyazovec получил admin-доступ в org `nearbyErp` (через Сашу/Алексея)
+- Глубокий обзор 18 репо. См. memory.
+
+### Наши code-фиксы (deployed + regressed на проде)
+
+| BUG-NNN | F-NN | Сервис | Что сделано | Регресс |
+|---|---|---|---|---|
+| **BUG-026** | F91 🔴→fixed | `erp-store-service` | `@Size(max=255)` на `name` в Create/UpdateStoreRequest + 6 unit-тестов через Hibernate Validator (`src/test/java/.../StoreRequestValidationTest.java` — первый тест в репо). Spec `API.md` обновлён. | Прод: 256 chars → 400 VALIDATION_ERROR с понятным message; 255 → 200 OK; финдинг-кейс (516+🤡) → 400 ✓ |
+| **BUG-027 (v2)** | F95 🔴→fixed | `erp-admin` | `PayrollPage.handleExportCsv` переписан. Endpoint `/payroll/{id}/export` оказался **bulk per-store-period** (не per-record, как считалось в v1). Логика: 0 ведомостей → disabled; «Все ТТ» → toast «выберите ТТ»; ТТ + N≥1 → реальный CSV всех сотрудников. | Прод: 3 кейса (disabled / реальный CSV `payroll-2026-05.csv` 689 bytes UTF-8 BOM / toast) ✓ |
+| docs | — | `quartz-test-base` | README + `quartz.config.ts` (старое имя `quartz-test-plans` → `quartz-test-base` после переименования репо). | https://nearbyerp.github.io/quartz-test-base/ корректные ссылки ✓ |
+
+### Закрыто без code-фикса (16 финдингов)
+
+| Категория | Финдинги |
+|---|---|
+| **By-design (BR 1.10, BR 3.2, fallback'ы)** | F1, F6a, F6b, F39, F41, F54, F62 (dup F81), F81 |
+| **Fixed by infra/deploy между записью и сейчас** | F78, F86 (=BUG-060 fixed), F93, F94 (POST/PATCH ОК), F98, F100 |
+| **Защита уже на двух уровнях** | F60 (preflight + unique-index) |
+| **Не воспроизводится / устаревший финдинг** | F99 (иерархия категорий работает на 5 кейсах) |
+
+### Retracted как не-баги (3)
+
+F2, F5, F7 — test-data / docs, не код.
+
+### Подтверждённые реальные баги (НЕ фиксили — ждут приоритизации)
+
+**Бэк (defensive validation — паттерн BUG-026):**
+- **F77** 🔴 — `POST /legal-entities` с unknown полем (например `email` вместо `contact_email`) → 500. **Причина обнаружена:** `user-service/JacksonConfig` использует `new ObjectMapper()` (FAIL_ON_UNKNOWN_PROPERTIES=true, отличается от других сервисов) + нет `HttpMessageNotReadableException` handler. План фикса готов — см. handoff `F77-user-service-unknown-field-500-2026-05-13.md`.
+- **F82** 🟡 — PATCH product `kcal/protein/fat/carbs=-100` → 200 OK. Нужны `@PositiveOrZero` в `Create/UpdateProductRequest`.
+- **F85** 🔴 — POST product `name: "<script>alert(1)</script>"` → 201 OK. XSS-вектор. Нужен sanitize или `@Pattern` excluding HTML.
+- **F92** 🟡 — POST store с `email: "noatsign"` → 201 OK. `CreateStoreRequest` без `@Email`.
+
+**Архитектура / UX:**
+- **F80** 🟡 — SPA не делает refresh на 401, JWT истекает за 8+ запросов
+- **F90** 🟡 — Last-write-wins без ETag/optimistic locking
+- **F96** 🟡 — Backend error message на английском в русском UI (нужен i18n-слой)
+
+**UI-тривиальные (по строкам кода):**
+- F53 (logout button без `type="button"`), F76 (Link на /stores), F79 (кавычки), F83 (HEX без pattern), F87 (поле Категория в карточке), F88 (двойные кавычки в confirm), F89 (2 опции «(дефолтный)»), F101 (AI кнопка-заглушка)
+
+### Verify-needed (требуют UI-проверки или другого аккаунта)
+
+F16 (Manager-аккаунт), F47 (удалённые модификаторы), F48 (Dashboard Role: —), F64 (UI карточка ЮЛ — backend корректен), F84 (UI form silent), F97 (history.back).
+
+### POS/KDS зона — заморожена
+
+F25, F26, F27, F37, F42, F50-F59, F61, F63, F66-F75 — по memory `project_prod_stand_admin`.
+
+### Memory обновления
+
+- `project_role_unified_dev_tester` (новое)
+- `reference_toolchain` (новое — пути JDK/Maven/pnpm)
+- `feedback_main_only_workflow` (новое — у nearbyErp линейный main без PR)
+- `feedback_read_service_not_signature` (новое — урок F95: читать service-метод целиком)
+- `project_prod_stand_admin` (обновлён — paykeeper-adapter pod ожил)
+
+### Уроки сессии
+
+- **F95 v1→v2 catastrophe** — endpoint `/payroll/{id}/export` сигнатура per-record, реализация **bulk per-store-period**. Я не дочитал service-метод, выкатил неправильный фикс. Урок зафиксирован в `feedback_read_service_not_signature`.
+- **Перепроверка fixed** — после F95 Александр потребовал перепроверить остальные закрытия. Все остальные выдержали (F86 main case, F60 reproduce, F93 end-to-end, F94 POST/PATCH/DELETE, F6a/F6b silent ignore, F100 endpoint работает).
+
+---
 
 ## Сессия 2026-05-12 — Admin walkthrough на PROD + POS/KDS onboarding + наполнение стенда
 
